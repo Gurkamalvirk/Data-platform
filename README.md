@@ -26,7 +26,7 @@ flowchart TD
 - SQL moving averages, daily returns, volatility, monthly returns and all-history summaries.
 - PostgreSQL constraints and idempotent upserts; seven-day overlap and weekly full refresh.
 - Raw and rejected-record audit files; per-symbol failure isolation and pipeline run history.
-- Explicit synthetic demo mode, with a visible warning. No silent fallback on database errors.
+- Explicit synthetic demo mode (the shipped default in `config/dashboard.json`), with a visible warning. No silent fallback on database errors.
 - Daily scheduled ingestion at **03:00 UTC / 08:30 IST**, plus manual runs.
 - Python and JavaScript tests. The local Docker/Streamlit version remains available.
 
@@ -70,11 +70,13 @@ Import **Gurkamalvirk/Data-platform** from GitHub. Set:
 | Build command | `npm run build` |
 | Output directory | `dist` |
 | Node.js | 22.x or 24.x |
-| Initial environment variable | `DEMO_MODE=true` |
+| Initial mode | Demo, explicitly configured in `config/dashboard.json` |
 
 The `api/market.js` endpoint becomes a Vercel Node function automatically. Python ingestion and Docker are not started inside Vercel. **Do not use a Streamlit start command on Vercel.** Keep the project on Hobby for this personal portfolio.
 
 For the real database-backed version, follow **[Neon setup](docs/NEON_SETUP.md)**. Set server-side `DATABASE_URL` and `DEMO_MODE=false` in Vercel, then redeploy. Never use a `VITE_` prefix for a secret: Vite exposes those values to the browser.
+
+If deployed directly through the Vercel API, connect the existing Vercel project under **Settings → Git → Connect Git Repository → Gurkamalvirk/Data-platform** to enable automatic deployments from future pushes. The initial API deployment does not create this Git connection.
 
 ## Database setup and daily updates
 

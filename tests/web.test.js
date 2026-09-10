@@ -61,7 +61,7 @@ test("demo is deterministic, labelled and has full-window moving averages", () =
 });
 test("missing database cannot silently fall back to synthetic data", async () => {
   await assert.rejects(
-    () => readMarket({}),
+    () => readMarket({ DEMO_MODE: "false" }),
     (e) => e.code === "NOT_CONFIGURED",
   );
   const data = await readMarket({ DEMO_MODE: "true" });

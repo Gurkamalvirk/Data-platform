@@ -1,5 +1,6 @@
 import { neon, neonConfig } from "@neondatabase/serverless";
 import { demoData } from "./demo.js";
+import dashboard from "../config/dashboard.json" with { type: "json" };
 import stocks from "../config/stocks.json" with { type: "json" };
 
 // A short HTTP timeout bounds failures before the Vercel function deadline.
@@ -10,7 +11,8 @@ neonConfig.fetchFunction = (url, options) =>
   });
 
 export async function readMarket(env = process.env) {
-  if (env.DEMO_MODE === "true") return demoData(stocks);
+  const mode = env.DEMO_MODE === undefined ? dashboard.defaultMode : env.DEMO_MODE === "true" ? "demo" : "database";
+  if (mode === "demo") return demoData(stocks);
   if (!env.DATABASE_URL) {
     const error = new Error("Database configuration required");
     error.code = "NOT_CONFIGURED";

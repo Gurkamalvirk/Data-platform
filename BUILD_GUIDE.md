@@ -39,7 +39,7 @@ flowchart TD
 - SQL moving averages, daily returns, volatility, monthly returns and all-history summaries.
 - PostgreSQL constraints and idempotent upserts; seven-day overlap and weekly full refresh.
 - Raw and rejected-record audit files; per-symbol failure isolation and pipeline run history.
-- Explicit synthetic demo mode, with a visible warning. No silent fallback on database errors.
+- Explicit synthetic demo mode (the shipped default in `config/dashboard.json`), with a visible warning. No silent fallback on database errors.
 - Daily scheduled ingestion at **03:00 UTC / 08:30 IST**, plus manual runs.
 - Python and JavaScript tests. The local Docker/Streamlit version remains available.
 
@@ -83,11 +83,13 @@ Import **Gurkamalvirk/Data-platform** from GitHub. Set:
 | Build command | `npm run build` |
 | Output directory | `dist` |
 | Node.js | 22.x or 24.x |
-| Initial environment variable | `DEMO_MODE=true` |
+| Initial mode | Demo, explicitly configured in `config/dashboard.json` |
 
 The `api/market.js` endpoint becomes a Vercel Node function automatically. Python ingestion and Docker are not started inside Vercel. **Do not use a Streamlit start command on Vercel.** Keep the project on Hobby for this personal portfolio.
 
 For the real database-backed version, follow **[Neon setup](docs/NEON_SETUP.md)**. Set server-side `DATABASE_URL` and `DEMO_MODE=false` in Vercel, then redeploy. Never use a `VITE_` prefix for a secret: Vite exposes those values to the browser.
+
+If deployed directly through the Vercel API, connect the existing Vercel project under **Settings → Git → Connect Git Repository → Gurkamalvirk/Data-platform** to enable automatic deployments from future pushes. The initial API deployment does not create this Git connection.
 
 ## Database setup and daily updates
 
@@ -304,7 +306,7 @@ Save, then **Deployments → latest deployment → Redeploy**. Use Vercel's secr
 
 If ingestion has not populated tables yet, finish step 3 or 5 first. Check the Data view for pipeline runs and actual stored prices. The synthetic banner should disappear only when the database contains real data. If the database contains an explicitly loaded Python demo, the banner correctly remains.
 
-To explore the site before creating Neon, configure only `DEMO_MODE=true` and redeploy. This is an explicit demo configuration, not a silent fallback. For a live configuration, a missing/broken database displays a friendly error.
+The initial deployment already uses explicit demo mode from `config/dashboard.json`. You can also set `DEMO_MODE=true` to request demo mode. Set `DEMO_MODE=false` when connecting Neon; this overrides the shipped demo default. For a live configuration, a missing/broken database displays a friendly error.
 
 ## 5. Enable free daily ingestion
 
@@ -2679,6 +2681,7 @@ Location: repository root / `server/market.js`.
 `````
 import { neon, neonConfig } from "@neondatabase/serverless";
 import { demoData } from "./demo.js";
+import dashboard from "../config/dashboard.json" with { type: "json" };
 import stocks from "../config/stocks.json" with { type: "json" };
 
 // A short HTTP timeout bounds failures before the Vercel function deadline.
@@ -2689,7 +2692,8 @@ neonConfig.fetchFunction = (url, options) =>
   });
 
 export async function readMarket(env = process.env) {
-  if (env.DEMO_MODE === "true") return demoData(stocks);
+  const mode = env.DEMO_MODE === undefined ? dashboard.defaultMode : env.DEMO_MODE === "true" ? "demo" : "database";
+  if (mode === "demo") return demoData(stocks);
   if (!env.DATABASE_URL) {
     const error = new Error("Database configuration required");
     error.code = "NOT_CONFIGURED";
@@ -3237,7 +3241,7 @@ test("demo is deterministic, labelled and has full-window moving averages", () =
 });
 test("missing database cannot silently fall back to synthetic data", async () => {
   await assert.rejects(
-    () => readMarket({}),
+    () => readMarket({ DEMO_MODE: "false" }),
     (e) => e.code === "NOT_CONFIGURED",
   );
   const data = await readMarket({ DEMO_MODE: "true" });
@@ -3424,13 +3428,15 @@ Location: repository root / `VALIDATION.md`.
 - Python: **18 passed, 2 skipped**. Includes transformation, duplicate auditing, retries, shared configuration and direct/TLS Neon URL validation.
 - Original Streamlit: all four views were checked using synthetic query fixtures during the initial implementation.
 
+- Local HTTP API smoke check passed: 3,480 synthetic records for five configured stocks; POST requests return 405.
+
 ## External checks and limits
 
 - The two real-PostgreSQL integration tests require a database; no local Docker/PostgreSQL server is available here.
 - No Neon database credential has been supplied. Live database reads, migrations and scheduled ingestion must be verified after following docs/NEON_SETUP.md.
 - Yahoo's earlier live fetch was rate-limited/timed out. Successful live ingestion is not claimed.
 - Browser automation could not launch in this workspace and the browser download timed out. Browser-level visual QA is not claimed.
-- Explicit React demo mode requires DEMO_MODE=true. No configured live database failure silently switches to demo prices.
+- React demo mode is explicitly selected by config/dashboard.json; DEMO_MODE=false selects the live database. No configured live database failure silently switches to demo prices.
 
 Follow the README to verify locally, and confirm a successful Actions ingestion run before using the hosted site with DEMO_MODE=false.
 
@@ -3460,3 +3466,13 @@ dist/
 *.log
 
 `````
+
+### config/dashboard.json
+
+Explicit shipped mode; DEMO_MODE=false overrides this when connecting Neon.
+
+```json
+{
+  "defaultMode": "demo"
+}
+```

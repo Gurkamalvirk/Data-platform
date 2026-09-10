@@ -59,7 +59,7 @@ Save, then **Deployments → latest deployment → Redeploy**. Use Vercel's secr
 
 If ingestion has not populated tables yet, finish step 3 or 5 first. Check the Data view for pipeline runs and actual stored prices. The synthetic banner should disappear only when the database contains real data. If the database contains an explicitly loaded Python demo, the banner correctly remains.
 
-To explore the site before creating Neon, configure only `DEMO_MODE=true` and redeploy. This is an explicit demo configuration, not a silent fallback. For a live configuration, a missing/broken database displays a friendly error.
+The initial deployment already uses explicit demo mode from `config/dashboard.json`. You can also set `DEMO_MODE=true` to request demo mode. Set `DEMO_MODE=false` when connecting Neon; this overrides the shipped demo default. For a live configuration, a missing/broken database displays a friendly error.
 
 ## 5. Enable free daily ingestion
 
