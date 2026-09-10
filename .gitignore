@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+data/raw/*
+data/processed/*
+data/rejected/*
+logs/*
+!**/.gitkeep
+node_modules/
+dist/
+.vercel/
+.sites-runtime/
+*.log

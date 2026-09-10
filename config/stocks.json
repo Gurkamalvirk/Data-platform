@@ -1,0 +1,27 @@
+[
+  {
+    "symbol": "AAPL",
+    "company_name": "Apple",
+    "sector": "Technology"
+  },
+  {
+    "symbol": "MSFT",
+    "company_name": "Microsoft",
+    "sector": "Technology"
+  },
+  {
+    "symbol": "GOOGL",
+    "company_name": "Alphabet",
+    "sector": "Communication Services"
+  },
+  {
+    "symbol": "AMZN",
+    "company_name": "Amazon",
+    "sector": "Consumer Discretionary"
+  },
+  {
+    "symbol": "NVDA",
+    "company_name": "NVIDIA",
+    "sector": "Technology"
+  }
+]

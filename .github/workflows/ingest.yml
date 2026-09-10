@@ -1,0 +1,46 @@
+name: Daily market ingestion
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: market-ingestion
+  cancel-in-progress: false
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Check database configuration
+        id: config
+        shell: bash
+        run: |
+          if [ -n "$DATABASE_URL" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Database not configured. Add the DATABASE_URL repository secret to enable ingestion."
+          fi
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.configured == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.config.outputs.configured == 'true'
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install pipeline dependencies
+        if: steps.config.outputs.configured == 'true'
+        run: python -m pip install -r requirements-pipeline.txt
+      - name: Ingest daily observations
+        if: steps.config.outputs.configured == 'true'
+        # Sunday refresh catches corrections outside the normal overlap.
+        shell: bash
+        run: |
+          if [ "$(date -u +%u)" = "7" ]; then
+            python main.py --full-refresh
+          else
+            python main.py
+          fi
